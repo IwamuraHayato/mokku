@@ -1,9 +1,12 @@
 import streamlit as st
 import pandas as pd
 
+csv_mbti = 'https://example.com/path/to/mbti_personalities.csv'
+csv_output = 'http://fal-consultant.weblike.jp/tech0/output.csv'
+
 # CSVファイルを読み込む
-df = pd.read_csv('mbti_personalities.csv', delimiter='\t')
-df2 = pd.read_csv('output.csv')
+df = pd.read_csv(csv_mbti, delimiter='\t') #MBTI
+df2 = pd.read_csv(csv_output) #名簿
 
 # 'タイプ' と '名称' を組み合わせた表示用のリストを作成
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
