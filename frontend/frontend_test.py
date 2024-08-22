@@ -81,11 +81,11 @@ def find_best_matches(people, selected_type, top_n=3):
     print(content)
 
     # 対象者と選定理由を抽出するための正規表現パターン
-    pattern = r"対象者は、名前：([^,]+), 選定理由: ([^\n]+)"
+    pattern = r"\*\*名前\*\*: ([\w\s-]+)\s+\*\*選定理由\*\*: ([\s\S]+?)(?=\n\d|$)"
     # 正規表現による抽出
     matches = re.findall(pattern, content)
     # 結果を配列に格納
-    result = [{"名前": match[0], "選定理由": match[1]} for match in matches]
+    result = [{"名前": match[0], "選定理由": match[1].strip()} for match in matches]
 
     return result
 
