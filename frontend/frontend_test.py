@@ -48,6 +48,54 @@ import csv
 from openai import OpenAI
 import os
 import re
+import requests  # HTTPリクエストを送信するためのモジュールをインポート
+import json  # JSONデータを扱うためのモジュールをインポート
+import pandas as pd  # pandasライブラリをインポート
+
+# Notion APIキーを設定
+NOTION_API_KEY = "secret_5BRVYRZT2WMmyWJOpS5EyrIal92hmXbKR7ublWsVoRh"
+
+# 対象のデータベースIDを設定
+DATABASE_ID = "48b945dacfa64355a4a8bb62ce6a506b"
+
+# Notion APIのエンドポイントURLを設定
+url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
+
+# APIリクエストのヘッダー情報を設定
+headers = {
+    "Notion-Version": "2022-06-28",  # Notion APIのバージョンを指定
+    'Authorization': 'Bearer ' + NOTION_API_KEY,  # APIキーを含む認証情報
+    'Content-Type': 'application/json',  # リクエストのコンテンツタイプをJSONに設定
+}
+
+# Notion APIにPOSTリクエストを送信し、レスポンスを取得
+response = requests.post(url, headers=headers)
+
+# レスポンスのJSONデータから 'results' 部分を取得
+data = response.json().get('results')
+
+# 'results' 内の各項目の 'properties' を抽出してリストにまとめる
+contents = [i['properties'] for i in data]
+
+# 抽出した 'properties' のデータをDataFrameに変換
+df = pd.DataFrame(contents)
+
+# 'plain_text' だけを抽出する関数を定義
+def extract_plain_text(cell):
+    if isinstance(cell, dict):  # cellが辞書であるか確認
+        text_content = cell.get('rich_text', cell.get('title', []))  # 'rich_text' または 'title' を取得
+        if isinstance(text_content, list) and len(text_content) > 0:  # リストであり、空でないか確認
+            return text_content[0].get('plain_text', None)  # 'plain_text' を取得して返す
+    return None  # 該当がない場合は None を返す
+
+# DataFrameの全セルに 'plain_text' を適用し、新しいDataFrameを作成
+df_plain_text = df.map(extract_plain_text)
+
+# 特定の列だけを抽出して新しいDataFrameを作成
+df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心のある領域', 
+                             'Tech0のPJTで8期の仲間と協働する際に大切にしたいと思うこと', 
+                             'PJTをする上で自分が得意なこと・苦手なこと', 
+                             'Tech0の参加動機と１年後に到達したい・達成したいこと']]
 
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
 api_key = os.getenv("OPEN_API_KEY")
@@ -58,10 +106,10 @@ client = OpenAI()
 # 対象者のMBTIタイプ
 # user_mbti = "INTP"
 
-# CSVファイルを読み込み
-with open('output.csv', newline='', encoding='utf-8') as csvfile:
-    reader = csv.DictReader(csvfile)
-    people = list(reader)
+# CSVファイルを読み込み ＝＝＝＞　データフレームから読み込みに変更
+# with open('output.csv', newline='', encoding='utf-8') as csvfile:
+reader = df_for_GPT.to_dict(orient='records')
+people = list(reader)
 
 def find_best_matches(people, selected_type, top_n=3):
     prompts = []
