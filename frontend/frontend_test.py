@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # CSVファイルを読み込む
-df = pd.read_csv('mbti_personalities.csv', delimiter='\t')
+df = pd.read_csv('mbti_personalities.csv')
 df2 = pd.read_csv('output.csv')
 
 # 'タイプ' と '名称' を組み合わせた表示用のリストを作成
