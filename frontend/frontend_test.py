@@ -10,6 +10,7 @@ df2 = pd.read_csv('frontend/output.csv')
 # df = pd.read_csv('mbti_personalities.csv')
 # df2 = pd.read_csv('output.csv')
 
+
 # 'タイプ' と '名称' を組み合わせた表示用のリストを作成
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
 
@@ -110,14 +111,18 @@ api_key = st.secrets["OPENAI_API_KEY"]
 
 # こっちがローカル環境で確認する用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
+
 # api_key = os.getenv("OPEN_API_KEY")
+
+api_key = st.secrets["OPENAI_API_KEY"]
+
 
 # openAIの機能をclientに代入
 # client = OpenAI()
 
-# OpenAIのAPIキーを設定
+# OpenAIのAPIキーを設定 Push時はAPIキーを削除して　変数api_keyを有効にしてください　
+#ローカル用　openai.api_key = "***key***"
 openai.api_key = api_key
-
 
 # 対象者のMBTIタイプ
 # user_mbti = "INTP"
