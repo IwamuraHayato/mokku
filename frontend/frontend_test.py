@@ -46,6 +46,7 @@ selected_type = st.selectbox('名前を選択:', df2['Slack表示名'])
 
 import csv
 from openai import OpenAI
+import openai
 import os
 import re
 import requests  # HTTPリクエストを送信するためのモジュールをインポート
@@ -98,10 +99,14 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
                              'Tech0の参加動機と１年後に到達したい・達成したいこと']]
 
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
-api_key = os.getenv("OPEN_API_KEY")
+api_key = st.secrets("OPEN_API_KEY")
 
 # openAIの機能をclientに代入
-client = OpenAI()
+#client = OpenAI()
+
+# OpenAIのAPIキーを設定
+openai.api_key = api_key
+
 
 # 対象者のMBTIタイプ
 # user_mbti = "INTP"
@@ -117,7 +122,7 @@ def find_best_matches(people, selected_type, top_n=3):
     for person in people:
         persons = persons + str(f"名前: {person['Slack表示名']} 関心領域: {person['関心のある領域']}, 得意・不得意: {person['PJTをする上で自分が得意なこと・苦手なこと']},")
     prompt = f"MBTIタイプが{selected_type}の人物と合う人物を以下から3名選んでください。 " + persons + "。対象者は、名前：,選定理由:形式で出力してください"
-    response =  client.chat.completions.create(
+    response =  openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "user", "content": prompt },
