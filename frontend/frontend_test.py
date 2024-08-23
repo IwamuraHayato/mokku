@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 
 # CSVファイルを読み込む
-df = pd.read_csv('mbti_personalities.csv')
-df2 = pd.read_csv('output.csv')
+df = pd.read_csv('frontend/mbti_personalities.csv')
+df2 = pd.read_csv('frontend/output.csv')
 
 # 'タイプ' と '名称' を組み合わせた表示用のリストを作成
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
