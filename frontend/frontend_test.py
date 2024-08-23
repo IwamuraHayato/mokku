@@ -99,7 +99,7 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
                              'Tech0の参加動機と１年後に到達したい・達成したいこと']]
 
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
-api_key = st.secrets("OPEN_API_KEY")
+api_key = st.secrets["OPEN_API_KEY"]
 
 # openAIの機能をclientに代入
 #client = OpenAI()
