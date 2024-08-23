@@ -1,9 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-# CSVファイルを読み込む
+# CSVファイルを読み込む（必要に応じて#コメントアウトしてください）
+# ↓デプロイ用
 df = pd.read_csv('frontend/mbti_personalities.csv')
 df2 = pd.read_csv('frontend/output.csv')
+
+# ↓ローカル用
+# df = pd.read_csv('mbti_personalities.csv')
+# df2 = pd.read_csv('output.csv')
 
 # 'タイプ' と '名称' を組み合わせた表示用のリストを作成
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
@@ -98,11 +103,17 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
                              'PJTをする上で自分が得意なこと・苦手なこと', 
                              'Tech0の参加動機と１年後に到達したい・達成したいこと']]
 
+# こっちがデプロイ環境用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
-api_key = st.secrets["OPEN_API_KEY"]
+api_key = st.secrets["OPENAI_API_KEY"]
+
+
+# こっちがローカル環境で確認する用のコード
+# OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
+# api_key = os.getenv("OPEN_API_KEY")
 
 # openAIの機能をclientに代入
-#client = OpenAI()
+# client = OpenAI()
 
 # OpenAIのAPIキーを設定
 openai.api_key = api_key
@@ -116,29 +127,50 @@ openai.api_key = api_key
 reader = df_for_GPT.to_dict(orient='records')
 people = list(reader)
 
-def find_best_matches(people, selected_type, top_n=3):
-    prompts = []
+def find_best_matches(people, user_mbti, top_n=3):
+    
     persons = ""
     for person in people:
-        persons = persons + str(f"名前: {person['Slack表示名']} 関心領域: {person['関心のある領域']}, 得意・不得意: {person['PJTをする上で自分が得意なこと・苦手なこと']},")
-    prompt = f"MBTIタイプが{selected_type}の人物と合う人物を以下から3名選んでください。 " + persons + "。対象者は、名前：,選定理由:形式で出力してください"
+        persons = persons + \
+            str(f"【名前】 {person['Slack表示名']}, \
+                【自己紹介】 {person['自己紹介']}, \
+                【得意な業界】 {person['業界']}, \
+                【関心のある領域】 {person['関心のある領域']}, \
+                【協働で大切にしたいこと】 {person['Tech0のPJTで8期の仲間と協働する際に大切にしたいと思うこと']}, \
+                【プロジェクト推進で得意なこと/苦手なこと】 {person['PJTをする上で自分が得意なこと・苦手なこと']}, \
+                【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']},") + "\n"
+    
+    prompt = f"MBTIタイプが{user_mbti}の人物と合う人物を以下から3名選び、それぞれのMBTIタイプを推測してください。\
+            また、対象者とペアでプロレスをする際の必殺技の名前も提案してください。\
+            対象者は、次の形式に従って、出力してください。項目には余計な記号や装飾（**など）をつけず、名前はそのまま利用し漢字変換は行わないでください。\
+            また、指定した形式に正確に従って出力してください。ただし、淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします。\
+            いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調でお願いします。\
+            また、相手の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についても説明を追加してください。\
+            形式の指定はじまり\n\
+                【名前】[名前をそのまま出力]\n\
+                【選定理由】[選定理由をそのまま出力]\n \
+                【推定MBTI】[推定MBTIをそのまま出力]\n \
+                【必殺技】[必殺技の名前をそのまま出力]\n \
+            形式の指定終わり\n \
+            ここから対象者の情報" + persons
+
     response =  openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "user", "content": prompt },
         ],
     )
-        
+    
     # コンテンツを抽出
     content = response.choices[0].message.content.strip()
     print(content)
-
+    
     # 対象者と選定理由を抽出するための正規表現パターン
-    pattern = r"\*\*名前\*\*: ([\w\s-]+)\s+\*\*選定理由\*\*: ([\s\S]+?)(?=\n\d|$)"
-    # 正規表現による抽出
-    matches = re.findall(pattern, content)
+    pattern = r"【名前】\s*(.*?)\s*【選定理由】\s*(.*?)\s*【推定MBTI】\s*(.*?)\s*【必殺技】\s*(.*?)\s*(?=【名前】|$)"
+    matches = re.findall(pattern, content, re.DOTALL)
+
     # 結果を配列に格納
-    result = [{"名前": match[0], "選定理由": match[1].strip()} for match in matches]
+    result = [{"名前": match[0], "選定理由": match[1], "推定MBTI": match[2], "必殺技": match[3]} for match in matches]
 
     return result
 
@@ -152,6 +184,6 @@ if st.button('相性の良いメンバーを提案'):
         st.write("結果を取得しました。")
         st.subheader('相性の良いメンバー')
         for match in best_matches:
-            st.write(f"名前: {match['名前']}, 選定理由: {match['選定理由']}")
+            st.write(f"名前: {match['名前']}, 選定理由: {match['選定理由']}, 推定MBTIタイプ: {match['推定MBTI']}, 必殺技: {match['必殺技']}")
     else:
         st.error("結果が取得できませんでした。")
