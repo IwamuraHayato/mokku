@@ -3,12 +3,12 @@ import pandas as pd
 
 # CSVファイルを読み込む（必要に応じて#コメントアウトしてください）
 # ↓デプロイ用
-df = pd.read_csv('frontend/mbti_personalities.csv')
-df2 = pd.read_csv('frontend/output.csv')
+# df = pd.read_csv('frontend/mbti_personalities.csv')
+# df2 = pd.read_csv('frontend/output.csv')
 
 # ↓ローカル用
-# df = pd.read_csv('mbti_personalities.csv')
-# df2 = pd.read_csv('output.csv')
+df = pd.read_csv('mbti_personalities.csv')
+df2 = pd.read_csv('output.csv')
 
 
 # 'タイプ' と '名称' を組み合わせた表示用のリストを作成
@@ -46,7 +46,7 @@ st.write('')
 st.subheader('あなたのお名前を選択してください。')
 
 # 名前を選択
-selected_type = st.selectbox('名前を選択:', df2['Slack表示名'])
+user_name = st.selectbox('名前を選択:', df2['Slack表示名'])
 
 # ---------------
 
@@ -106,16 +106,14 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
 
 # こっちがデプロイ環境用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
-api_key = st.secrets["OPENAI_API_KEY"]
+# api_key = st.secrets["OPENAI_API_KEY"]
 
 
 # こっちがローカル環境で確認する用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
 
-# api_key = os.getenv("OPEN_API_KEY")
-
-api_key = st.secrets["OPENAI_API_KEY"]
-
+api_key = os.getenv("OPEN_API_KEY")
+# api_key = st.secrets["OPENAI_API_KEY"]
 
 # openAIの機能をclientに代入
 # client = OpenAI()
@@ -132,7 +130,7 @@ openai.api_key = api_key
 reader = df_for_GPT.to_dict(orient='records')
 people = list(reader)
 
-def find_best_matches(people, user_mbti, top_n=3):
+def find_best_matches(people, user_name, user_mbti):
     
     persons = ""
     for person in people:
@@ -145,19 +143,27 @@ def find_best_matches(people, user_mbti, top_n=3):
                 【プロジェクト推進で得意なこと/苦手なこと】 {person['PJTをする上で自分が得意なこと・苦手なこと']}, \
                 【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']},") + "\n"
     
-    prompt = f"MBTIタイプが{user_mbti}の人物と合う人物を以下から3名選び、それぞれのMBTIタイプを推測してください。\
-            また、対象者とペアでプロレスをする際の必殺技の名前も提案してください。\
-            対象者は、次の形式に従って、出力してください。項目には余計な記号や装飾（**など）をつけず、名前はそのまま利用し漢字変換は行わないでください。\
-            また、指定した形式に正確に従って出力してください。ただし、淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします。\
-            いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調でお願いします。\
-            また、相手の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についても説明を追加してください。\
+    prompt = f"名前{user_name}のMBTIタイプは{user_mbti}です。\
+            プロジェクトチームを組む際に{user_name}と合う人物を対象者から3名選び、それぞれのMBTIタイプを推測してください。\
+            また、選んだ人物とペアでプロレスをする際の必殺技の名前も提案してください。\
+            以下の条件に従ってください。\
+                選ぶ3名に{user_name}を含めないでください\n \
+                選ぶ3名は重複させないでください\n \
+                選んだ3名はそれぞれ1回ずつ形式に従って出力してください\n \
+                項目には余計な記号や装飾（**など）をつけないでください\n \
+                {user_name}および選んだ人物の名前を出力する際は、漢字変換せずそのまま使ってください\n \
+                指定した形式に正確に従って出力してください\n \
+                淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします\n \
+                いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調でお願いします\n \
+                選んだ人物の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についても説明を追加してください\n \
+            対象者は、次の形式に従って、出力してください。\n \
             形式の指定はじまり\n\
                 【名前】[名前をそのまま出力]\n\
                 【選定理由】[選定理由をそのまま出力]\n \
-                【推定MBTI】[推定MBTIをそのまま出力]\n \
+                【推定MBTI】[推定MBTIタイプをアルファベット4桁のみで出力]\n \
                 【必殺技】[必殺技の名前をそのまま出力]\n \
             形式の指定終わり\n \
-            ここから対象者の情報" + persons
+            ここから対象者の情報\n" + persons
 
     response =  openai.chat.completions.create(
         model="gpt-4o-mini",
@@ -182,13 +188,44 @@ def find_best_matches(people, user_mbti, top_n=3):
 # API呼び出しと結果表示
 if st.button('相性の良いメンバーを提案'):
     st.write("APIを呼び出しています...")
-    best_matches = find_best_matches(people, selected_type)
+    best_matches = find_best_matches(people, user_name, selected_type)
+    # dummy
+    # best_matches = [{'名前': 'Tnaka Yasuhiro-8', '選定理由': '彼の全力投入フルスロットルの姿勢に惹かれるんだ！気合いが入ったプロジェクトは彼と決まり！商談や事業創出のストーリー作りが得意な彼は、チームの力に絶対なる。', '推定MBTI': 'ENFJ', '必殺技': 'フルスロットルストーリーサイクロン'}, {'名前': 'Takahashi Hiroaki-8', '選定理由': '資料作りのプロ！プレゼンを盛り上げる力は抜群だ。チームのビジョンを一緒に描いて、成功の秘訣を分かち合う仲間にうってつけだ！', '推定MBTI': 'ESFJ', '必殺技': 'ピッチパワフルスラップ'}, {'名前': 'Sugiyama Shoichi-8', '選定理由': '彼は決断力があり、リアルな視点で進行ができる力量がある。エンジニアとのコミュニケーション強化に彼の経験が役立つはずだ！', '推定MBTI': 'ENTJ', '必殺技': 'デシジョンメイキングスラム  \n\nてなわけで、この3人、Nakamura Taijiとガッチリと組んだら相乗効果が抜群だぜ！ENFJ、ESFJ、ENTJの組み合わせは、計画的な戦略を立てて目標に向かうのにピッタリだ！INTJのNakamura Taijiとの相性も良くて、思考の深さと行動のバランスがとれる連携が生まれるぜ！これから、熱い戦いを繰り広げる準備が整った！いざ、プロジェクトの成功へ突き進もう！'}]
     print(best_matches)
 
-    if best_matches:
-        st.write("結果を取得しました。")
-        st.subheader('相性の良いメンバー')
-        for match in best_matches:
-            st.write(f"名前: {match['名前']}, 選定理由: {match['選定理由']}, 推定MBTIタイプ: {match['推定MBTI']}, 必殺技: {match['必殺技']}")
-    else:
+    if len(best_matches) == 0:
         st.error("結果が取得できませんでした。")
+        exit
+    
+    st.write("結果を取得しました。")
+    st.subheader('相性の良いメンバー')
+
+    # 結果表示
+    col = st.columns(3)
+    resComment = ""
+
+    for idx, match in enumerate(best_matches):
+        resName = match['名前']
+        resReason = match['選定理由']
+        resMbti = match["推定MBTI"]
+        resSpecial = match["必殺技"]
+
+        #最終行に含まれるコメント抽出
+        if(idx == 2):
+            resSpecial, resComment = resSpecial.split("\n\n")    
+
+        # 出力イメージパス ※MBTIタイプ.jpgで保存される想定
+        pathImage = f"../picture/{resMbti}.jpg" # ローカル用
+
+        with col[idx]:
+            st.header(resName)
+            st.image(pathImage)
+            st.write(resReason)
+            st.write(f"必殺技:{resSpecial}")
+        
+    # コメント出力
+    st.header(resComment)
+
+
+
+    
