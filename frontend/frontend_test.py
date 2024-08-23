@@ -121,7 +121,7 @@ api_key = st.secrets["OPENAI_API_KEY"]
 # client = OpenAI()
 
 # OpenAIのAPIキーを設定 Push時はAPIキーを削除して　変数api_keyを有効にしてください　
-#ローカル用　openai.api_key = "***key***"
+#ローカル用　openai.api_key = "******"
 openai.api_key = api_key
 
 # 対象者のMBTIタイプ
