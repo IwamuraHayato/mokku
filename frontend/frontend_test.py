@@ -1,9 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-# CSVファイルを読み込む
+# CSVファイルを読み込む（必要に応じて#コメントアウトしてください）
+# ↓デプロイ用
 df = pd.read_csv('frontend/mbti_personalities.csv')
 df2 = pd.read_csv('frontend/output.csv')
+
+# ↓ローカル用
+#df = pd.read_csv('mbti_personalities.csv')
+#df2 = pd.read_csv('output.csv')
 
 # 'タイプ' と '名称' を組み合わせた表示用のリストを作成
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
@@ -99,14 +104,14 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
                              'Tech0の参加動機と１年後に到達したい・達成したいこと']]
 
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
-api_key = st.secrets["OPEN_API_KEY"]
+api_key = st.secrets["OPENAI_API_KEY"]
 
 # openAIの機能をclientに代入
 #client = OpenAI()
 
-# OpenAIのAPIキーを設定
+# OpenAIのAPIキーを設定 Push時はAPIキーを削除して　変数api_keyを有効にしてください　
+#ローカル用　openai.api_key = "***key***"
 openai.api_key = api_key
-
 
 # 対象者のMBTIタイプ
 # user_mbti = "INTP"
