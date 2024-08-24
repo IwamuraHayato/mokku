@@ -65,7 +65,7 @@ df2 = pd.read_csv('frontend/output.csv')
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
 
 # タイトル
-st.image(image_path, caption='picture/tech0_Logo.png', width=300)
+
 st.title('タッグチーム・エクスプロイダー')
 st.write('')
 st.write('Tech0で新しい班を決める際、誰に声をかければよいか悩んだ経験はありませんか？')
