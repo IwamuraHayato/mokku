@@ -184,8 +184,10 @@ reader = df_for_GPT.to_dict(orient='records')
 people = list(reader)
 
 def find_best_matches(people, user_name, user_mbti):
-    
-    persons = persons + str(f"【名前】 {person['Slack表示名']} \
+
+    persons = ""
+    for person in people:
+        persons = persons + str(f"【名前】 {person['Slack表示名']} \
                 【自己紹介】 {person['自己紹介']}, \
                 【得意な業界】 {person['業界']}, \
                 【関心のある領域】 {person['関心のある領域']}, \
