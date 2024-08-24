@@ -25,7 +25,7 @@ def set_background(png_file):
 
 
 # 画像の相対パスを指定
-image_path = '../picture/prowres_background.jpg'
+image_path = 'picture/prowres_background.jpg'
 set_background(image_path)
 
 
