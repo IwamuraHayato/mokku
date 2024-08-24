@@ -267,7 +267,7 @@ if st.button('タッグ・パートナーを探す！'):
             resSpecial, resComment = resSpecial.split("\n\n")    
 
         # 出力イメージパス ※MBTIタイプ.jpgで保存される想定
-        pathImage = f"../picture/{resMbti}.jpg" # ローカル用
+        pathImage = f"picture/{resMbti}.jpg" # ローカル用
 
         with col[idx]:
             st.header(resName)
