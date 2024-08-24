@@ -1,5 +1,55 @@
 import streamlit as st
 import pandas as pd
+import os
+import base64
+
+# 背景画像の設定
+def get_base64(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_background(png_file):
+    bin_str = get_base64(png_file)
+    page_bg_img = f"""
+    <style>
+    .stApp {{
+        background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url("data:image/png;base64,{bin_str}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }}
+    </style>
+    """
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+
+# 画像の相対パスを指定
+image_path = 'picture/prowres_background.jpg'
+set_background(image_path)
+
+
+# カスタムCSSを定義
+button_css = """
+<style>
+div.stButton > button:first-child {
+    background-color: #FFA500;  /* 背景色をオレンジ色に設定 */
+    color: white;  /* テキストの色を白に設定 */
+    padding: 14px 20px;  /* パディングを設定 */
+    margin: 8px 0;  /* マージンを設定 */
+    border: none;  /* ボーダーをなしに設定 */
+    cursor: pointer;  /* カーソルをポインターに設定 */
+    width: 100%;  /* 幅を100%に設定 */
+    font-size: 100px;
+}
+div.stButton > button:first-child:hover {
+    opacity: 0.8;  /* ホバー時の不透明度を設定 */
+}
+</style>
+"""
+
+# カスタムCSSを適用
+st.markdown(button_css, unsafe_allow_html=True)
 
 # CSVファイルを読み込む（必要に応じて#コメントアウトしてください）
 # ↓デプロイ用
@@ -15,38 +65,39 @@ df2 = pd.read_csv('frontend/output.csv')
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
 
 # タイトル
-st.title('MBTIで新しい班決めをサポート！')
+st.title('タッグチーム・エクスプロイダー')
 st.write('')
-st.write('Tech0の新しい班を決める時、誰に声をかければよいか悩んだ経験はありませんか？')
-st.write('このアプリはあなたのMBTIタイプから最適なチーム編成をご提案します！')
+st.write('Tech0で新しい班を決める際、誰に声をかければよいか悩んだ経験はありませんか？')
+st.write('このWebアプリはあなたのMBTIタイプから最適なチーム編成を"プロレス風"にご提案します！')
+st.write('左のサイドバーからあなたのMBTIタイプとお名前を選択していただいた後に、<br>「タッグ・パートナーを探す！」ボタンを押してください。', unsafe_allow_html=True)
 st.write('')
 st.write('')
 
 # 説明
-st.subheader('あなたのMBTIタイプを選択してください。')
+st.sidebar.subheader('あなたのMBTIタイプを選択してください。')
 
 # MBTIタイプを選択
-selected_type = st.selectbox('MBTIタイプを選択:', df['タイプ名称'])
+selected_type = st.sidebar.selectbox('MBTIタイプを選択:', df['タイプ名称'])
 
 # 選択したタイプの詳細情報を取得
 selected_personality = df[df['タイプ名称'] == selected_type].iloc[0]
 
 # 選択されたタイプの詳細を表示
-st.subheader(f"{selected_personality['タイプ']} - {selected_personality['名称']}")
-st.write(f"**特徴:** {selected_personality['特徴']}")
-st.write(f"**強み:** {selected_personality['強み']}")
-st.write(f"**弱み:** {selected_personality['弱み']}")
-st.write(f"**組織内で向いている役割:** {selected_personality['組織内で向いている役割']}")
+st.sidebar.subheader(f"{selected_personality['タイプ']} - {selected_personality['名称']}")
+st.sidebar.write(f"**特徴:** {selected_personality['特徴']}")
+st.sidebar.write(f"**強み:** {selected_personality['強み']}")
+st.sidebar.write(f"**弱み:** {selected_personality['弱み']}")
+st.sidebar.write(f"**組織内で向いている役割:** {selected_personality['組織内で向いている役割']}")
 
-st.write('')
-st.write('')
-st.write('')
+st.sidebar.write('')
+st.sidebar.write('')
+st.sidebar.write('')
 
 # 説明
-st.subheader('あなたのお名前を選択してください。')
+st.sidebar.subheader('あなたのお名前を選択してください。')
 
 # 名前を選択
-selected_type = st.selectbox('名前を選択:', df2['Slack表示名'])
+user_name = st.sidebar.selectbox('名前を選択:', df2['Slack表示名'])
 
 # ---------------
 
@@ -102,7 +153,8 @@ df_plain_text = df.map(extract_plain_text)
 df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心のある領域', 
                              'Tech0のPJTで8期の仲間と協働する際に大切にしたいと思うこと', 
                              'PJTをする上で自分が得意なこと・苦手なこと', 
-                             'Tech0の参加動機と１年後に到達したい・達成したいこと']]
+                             'Tech0の参加動機と１年後に到達したい・達成したいこと',
+                             '自己紹介LP']]
 
 # こっちがデプロイ環境用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
@@ -111,17 +163,15 @@ api_key = st.secrets["OPENAI_API_KEY"]
 
 # こっちがローカル環境で確認する用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
-
 # api_key = os.getenv("OPEN_API_KEY")
 
 api_key = st.secrets["OPENAI_API_KEY"]
-
 
 # openAIの機能をclientに代入
 # client = OpenAI()
 
 # OpenAIのAPIキーを設定 Push時はAPIキーを削除して　変数api_keyを有効にしてください　
-#ローカル用　openai.api_key = "***key***"
+#ローカル用　openai.api_key = "******"
 openai.api_key = api_key
 
 # 対象者のMBTIタイプ
@@ -132,7 +182,7 @@ openai.api_key = api_key
 reader = df_for_GPT.to_dict(orient='records')
 people = list(reader)
 
-def find_best_matches(people, user_mbti, top_n=3):
+def find_best_matches(people, user_name, user_mbti):
     
     persons = ""
     for person in people:
@@ -143,21 +193,29 @@ def find_best_matches(people, user_mbti, top_n=3):
                 【関心のある領域】 {person['関心のある領域']}, \
                 【協働で大切にしたいこと】 {person['Tech0のPJTで8期の仲間と協働する際に大切にしたいと思うこと']}, \
                 【プロジェクト推進で得意なこと/苦手なこと】 {person['PJTをする上で自分が得意なこと・苦手なこと']}, \
-                【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']},") + "\n"
+                【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']}") + "\n"
     
-    prompt = f"MBTIタイプが{user_mbti}の人物と合う人物を以下から3名選び、それぞれのMBTIタイプを推測してください。\
-            また、対象者とペアでプロレスをする際の必殺技の名前も提案してください。\
-            対象者は、次の形式に従って、出力してください。項目には余計な記号や装飾（**など）をつけず、名前はそのまま利用し漢字変換は行わないでください。\
-            また、指定した形式に正確に従って出力してください。ただし、淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします。\
-            いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調でお願いします。\
-            また、相手の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についても説明を追加してください。\
+    prompt = f"名前{user_name}のMBTIタイプは{user_mbti}です。\
+            プロジェクトチームを組む際に{user_name}と合う人物を対象者から3名選び、それぞれのMBTIタイプを推測してください。\
+            また、選んだ人物とペアでプロレスをする際の必殺技の名前も提案してください。\
+            以下の条件に従ってください。\
+                選ぶ3名に{user_name}を含めないでください\n \
+                選ぶ3名は重複させないでください\n \
+                選んだ3名はそれぞれ1回ずつ形式に従って出力してください\n \
+                項目には余計な記号や装飾（**など）をつけないでください\n \
+                {user_name}および選んだ人物の名前を出力する際は、漢字やカナカナなど他の表記には一切変換せず、そのままの表記で表示してください\n \
+                指定した形式に正確に従って出力してください\n \
+                淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします\n \
+                いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調でお願いします\n \
+                選んだ人物の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についても説明を追加してください\n \
+            対象者は、次の形式に従って、出力してください。\n \
             形式の指定はじまり\n\
                 【名前】[名前をそのまま出力]\n\
                 【選定理由】[選定理由をそのまま出力]\n \
-                【推定MBTI】[推定MBTIをそのまま出力]\n \
+                【推定MBTI】[推定MBTIタイプをアルファベット4桁のみで出力]\n \
                 【必殺技】[必殺技の名前をそのまま出力]\n \
             形式の指定終わり\n \
-            ここから対象者の情報" + persons
+            ここから対象者の情報\n" + persons
 
     response =  openai.chat.completions.create(
         model="gpt-4o-mini",
@@ -180,15 +238,44 @@ def find_best_matches(people, user_mbti, top_n=3):
     return result
 
 # API呼び出しと結果表示
-if st.button('相性の良いメンバーを提案'):
-    st.write("APIを呼び出しています...")
-    best_matches = find_best_matches(people, selected_type)
+if st.button('タッグ・パートナーを探す！'):
+    st.write("OpenAI APIを呼び出しています...")
+    best_matches = find_best_matches(people, user_name, selected_type)
+    # dummy
+    # best_matches = [{'名前': 'Tnaka Yasuhiro-8', '選定理由': '彼の全力投入フルスロットルの姿勢に惹かれるんだ！気合いが入ったプロジェクトは彼と決まり！商談や事業創出のストーリー作りが得意な彼は、チームの力に絶対なる。', '推定MBTI': 'ENFJ', '必殺技': 'フルスロットルストーリーサイクロン'}, {'名前': 'Takahashi Hiroaki-8', '選定理由': '資料作りのプロ！プレゼンを盛り上げる力は抜群だ。チームのビジョンを一緒に描いて、成功の秘訣を分かち合う仲間にうってつけだ！', '推定MBTI': 'ESFJ', '必殺技': 'ピッチパワフルスラップ'}, {'名前': 'Sugiyama Shoichi-8', '選定理由': '彼は決断力があり、リアルな視点で進行ができる力量がある。エンジニアとのコミュニケーション強化に彼の経験が役立つはずだ！', '推定MBTI': 'ENTJ', '必殺技': 'デシジョンメイキングスラム  \n\nてなわけで、この3人、Nakamura Taijiとガッチリと組んだら相乗効果が抜群だぜ！ENFJ、ESFJ、ENTJの組み合わせは、計画的な戦略を立てて目標に向かうのにピッタリだ！INTJのNakamura Taijiとの相性も良くて、思考の深さと行動のバランスがとれる連携が生まれるぜ！これから、熱い戦いを繰り広げる準備が整った！いざ、プロジェクトの成功へ突き進もう！'}]
     print(best_matches)
 
-    if best_matches:
-        st.write("結果を取得しました。")
-        st.subheader('相性の良いメンバー')
-        for match in best_matches:
-            st.write(f"名前: {match['名前']}, 選定理由: {match['選定理由']}, 推定MBTIタイプ: {match['推定MBTI']}, 必殺技: {match['必殺技']}")
-    else:
+    if len(best_matches) == 0:
         st.error("結果が取得できませんでした。")
+        exit
+    
+    st.write("結果を取得しました。")
+    st.subheader('あなたにピッタリなタッグ・パートナーはこちら！')
+
+    # 結果表示
+    col = st.columns(3)
+    resComment = ""
+
+    for idx, match in enumerate(best_matches):
+        resName = match['名前']
+        resReason = match['選定理由']
+        resMbti = match["推定MBTI"]
+        resSpecial = match["必殺技"]
+
+        #最終行に含まれるコメント抽出
+        if(idx == 2):
+            resSpecial, resComment = resSpecial.split("\n\n")    
+
+        # 出力イメージパス ※MBTIタイプ.jpgで保存される想定
+        pathImage = f"picture/{resMbti}.jpg" # ローカル用
+
+        with col[idx]:
+            st.header(resName)
+            st.image(pathImage)
+            st.write(resReason)
+            st.write(f"必殺技:{resSpecial}")
+        
+    # コメント出力
+    st.header(resComment)
+    # --- ここにSlackワークスペースを開くボタンを追加します ---
+    st.link_button("SlackでDMを送る", "https://app.slack.com/client/T03L9C10DJR/C03LC9SRN0J")
