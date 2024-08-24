@@ -225,7 +225,8 @@ if st.button('相性の良いメンバーを提案'):
         
     # コメント出力
     st.header(resComment)
-
+    # --- ここにSlackワークスペースを開くボタンを追加します ---
+    st.link_button("SlackでDMを送る", "https://app.slack.com/client/T03L9C10DJR/C03LC9SRN0J")
 
 
     
