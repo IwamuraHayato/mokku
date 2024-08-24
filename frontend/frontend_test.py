@@ -165,14 +165,14 @@ api_key = st.secrets["OPENAI_API_KEY"]
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
 # api_key = os.getenv("OPEN_API_KEY")
 
-# api_key = st.secrets["OPENAI_API_KEY"]
+api_key = st.secrets["OPENAI_API_KEY"]
 
 # openAIの機能をclientに代入
 # client = OpenAI()
 
 # OpenAIのAPIキーを設定 Push時はAPIキーを削除して　変数api_keyを有効にしてください　
 #ローカル用　openai.api_key = "******"
-# openai.api_key = api_key
+openai.api_key = api_key
 
 # 対象者のMBTIタイプ
 # user_mbti = "INTP"
