@@ -177,7 +177,8 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
                              'PJTをする上で自分が得意なこと・苦手なこと', 
                              'Tech0の参加動機と１年後に到達したい・達成したいこと',
                              '自己紹介LP']]
-
+# 行をランダムに入れ替える
+df_for_GPT = df_for_GPT.sample(frac=1).reset_index(drop=True)
 # こっちがデプロイ環境用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
 api_key = st.secrets["OPENAI_API_KEY"]
