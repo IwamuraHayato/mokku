@@ -113,14 +113,9 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
 # こっちがローカル環境で確認する用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
 
+# OpenAIのAPIキーを設定 Push時はAPIキーを削除して　変数api_keyを有効にしてください　
 api_key = os.getenv("OPEN_API_KEY")
 # api_key = st.secrets["OPENAI_API_KEY"]
-
-# openAIの機能をclientに代入
-# client = OpenAI()
-
-# OpenAIのAPIキーを設定 Push時はAPIキーを削除して　変数api_keyを有効にしてください　
-#ローカル用　openai.api_key = "******"
 openai.api_key = api_key
 
 # 対象者のMBTIタイプ
@@ -135,14 +130,6 @@ def find_best_matches(people, user_name, user_mbti):
     
     persons = ""
     for person in people:
-        # persons = persons + \
-            # str(f"【名前】 {person['Slack表示名']}).replace, \
-            #     【自己紹介】 {person['自己紹介']}, \
-            #     【得意な業界】 {person['業界']}, \
-            #     【関心のある領域】 {person['関心のある領域']}, \
-            #     【協働で大切にしたいこと】 {person['Tech0のPJTで8期の仲間と協働する際に大切にしたいと思うこと']}, \
-            #     【プロジェクト推進で得意なこと/苦手なこと】 {person['PJTをする上で自分が得意なこと・苦手なこと']}, \
-            #     【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']},") + "\n"
             persons = persons + str(f"【名前】 {person['Slack表示名']} \
                 【自己紹介】 {person['自己紹介']}, \
                 【得意な業界】 {person['業界']}, \
@@ -151,11 +138,19 @@ def find_best_matches(people, user_name, user_mbti):
                 【プロジェクト推進で得意なこと/苦手なこと】 {person['PJTをする上で自分が得意なこと・苦手なこと']}, \
                 【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']}").replace("\n","").replace(" ","") + "\n\n"     
 
-    # print(persons)
-
-    prompt = f"名前{user_name}のMBTIタイプは{user_mbti}です。\
-            プロジェクトチームを組む際に{user_name}と相性が良いと思われる人物を、対象者全員の中から3名選び、それぞれのMBTIタイプを推測してください。\
-            また、選んだ人物とペアでプロレスをする際の必殺技の名前も提案してください。\
+    prompt = f"私の名前は{user_name}でMBTIタイプは{user_mbti}です。\
+            チームを組む際に私と相性が良いと思われる人物を、以下の手順で選んでください。\
+            手順始まり \
+                対象者全員のMBTIタイプを推定してください \
+                対象者全員の順番をランダムに変更してください \
+                推定MBTIタイプやその他の情報をもとに対象者全員の中から、私のMBTIタイプ{user_mbti}との合致度合いをスコアリングしてください \
+                全ての対象者のスコアから最もスコアが高い3名を選んでください。 \
+                選んだ3名と私とのMBTI以外の相性も、あらためて確認し選定理由を更新してください。\
+                この選定理由には対象者情報の【自己紹介】【得意な業界】【関心のある領域】【協働で大切にしたいこと】【プロジェクト推進で得意なこと/苦手なこと】 【参加動機や達成したいこと】の内容も含めてください \
+                選んだ3名それぞれの選定理由とペアでプロレスをする際の必殺技名を提案してください \
+                全ての解答の最後に、選んだ人物の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についての説明を追加してください。\
+                この説明は固定文字列\"__\"から始めてください。この説明には改行\nを含めないでください。 \
+            手順終わり \
             以下の条件に従ってください。\n \
                 選ぶ3名に{user_name}を含めないでください\n \
                 選ぶ3名は、重複させないでください\n \
@@ -164,14 +159,13 @@ def find_best_matches(people, user_name, user_mbti):
                 できるだけ異なる特性を持った人物を選び、チーム全体のバランスを考慮してください。\n \
                 **ランダム性を持たせて選び、特定の順序に依存しないようにしてください。**\n \
                 項目には余計な記号や装飾（**など）をつけないでください\n \
-                {user_name}および選んだ人物の名前を出力する際は、\
+                【名前】や【選定理由】その他の項目に、人物の名前を使う際は提供されたアルファベットの名前のみを用い、\
                 **一切の変換（漢字、カタカナ、ひらがな、アルファベットの大小文字変換など）を行わず、\
-                元の文字列をそのまま使用してください**。\n \
+                インプットされた文字列をそのまま使用してください**。\n \
                 指定した形式に正確に従って出力してください\n \
-                淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします\n \
+                全ての回答は淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします\n \
                 いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調でお願いします\n \
-                全ての解答の最後に、選んだ人物の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についての説明を追加してください。この説明の中では改行しないでください\n \
-            対象者は、次の形式に従って、出力してください。\n \
+            **結果は、次の形式に忠実に従って、出力してください。この形式以外の情報は一切出力しないでください**\n \
             形式の指定はじまり\n\
                 【名前】[名前をそのまま出力]\n \
                 【選定理由】[選定理由をそのまま出力]\n \
@@ -179,7 +173,7 @@ def find_best_matches(people, user_name, user_mbti):
                 【必殺技】[必殺技の名前をそのまま出力]\n \
             形式の指定終わり\n \
             対象者の情報はじまり\n" + persons + "\n対象者の情報終わり"
-
+        
     response =  openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -227,11 +221,15 @@ if st.button('相性の良いメンバーを提案'):
         resReason = match['選定理由']
         resMbti = match["推定MBTI"]
         resSpecial = match["必殺技"]
+        print("選定者：" + resName)
         #最終行に含まれるコメント抽出
         if(idx == 2):
-            temp = resSpecial.split("\n\n")    
-            resSpecial = temp[0]
-            resComment = temp[1]
+            try:
+                temp = resSpecial.split("__")    
+                resSpecial = str(temp[0]).replace("\n","")
+                resComment = temp[1]
+            except:
+                resComment = "split Error:" + resSpecial
 
         # 出力イメージパス ※MBTIタイプ.jpgで保存される想定
         pathImage = f"../picture/{resMbti}.jpg" # ローカル用
@@ -246,6 +244,7 @@ if st.button('相性の良いメンバーを提案'):
         with col[idx]:
             st.header(resName)
             st.image(pathImage)
+            st.write(f"(推定MBTI:{resMbti})")
             st.write(resReason)
             st.write(f"必殺技:{resSpecial}")
             # 自己紹介LP
@@ -255,7 +254,3 @@ if st.button('相性の良いメンバーを提案'):
 
     # コメント出力
     st.header(resComment)
-
-
-
-    
