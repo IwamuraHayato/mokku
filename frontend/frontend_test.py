@@ -9,7 +9,7 @@ GA_TRACKING_ID = "G-C61D8H9VCJ"  # ここにGA4のトラッキングIDを入力
 # Google Analytics 4のトラッキングコード
 ga4_code = f"""
 <!-- Google tag (gtag.js) -->
-<script async src="<https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}>"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){{dataLayer.push(arguments);}}
@@ -20,7 +20,7 @@ ga4_code = f"""
 """
 
 # GA4のトラッキングコードをアプリのヘッダーに挿入
-components.html(ga4_code)
+st.markdown(ga4_code, unsafe_allow_html=True)
 
 # 背景画像の設定
 def get_base64(bin_file):
