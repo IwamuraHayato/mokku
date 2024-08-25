@@ -2,6 +2,25 @@ import streamlit as st
 import pandas as pd
 import os
 import base64
+import streamlit.components.v1 as components
+
+GA_TRACKING_ID = "G-C61D8H9VCJ"  # ここにGA4のトラッキングIDを入力
+
+# Google Analytics 4のトラッキングコード
+ga4_code = f"""
+<!-- Google tag (gtag.js) -->
+<script async src="<https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}>"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+
+  gtag('config', '{GA_TRACKING_ID}');
+</script>
+"""
+
+# GA4のトラッキングコードをアプリのヘッダーに挿入
+components.html(ga4_code)
 
 # 背景画像の設定
 def get_base64(bin_file):
