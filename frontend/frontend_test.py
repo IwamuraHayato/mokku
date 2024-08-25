@@ -5,7 +5,6 @@ import base64
 import streamlit.components.v1 as components
 import pathlib
 import shutil
-import streamlit as st
 from bs4 import BeautifulSoup
 
 GA_TRACKING_ID = "G-C61D8H9VCJ"  # ここにGA4のトラッキングIDを入力
@@ -22,21 +21,7 @@ ga4_code = f"""
   gtag('config', '{GA_TRACKING_ID}');
 </script>
 """
-def inject_ga():
-    
-    index_path = pathlib.Path(st.__file__).parent / "static" / "index.html"
-    soup = BeautifulSoup(index_path.read_text(), features="html.parser")
-    if not soup.find(id=GA_TRACKING_ID): 
-        bck_index = index_path.with_suffix('.bck')
-        if bck_index.exists():
-            shutil.copy(bck_index, index_path)  
-        else:
-            shutil.copy(index_path, bck_index)  
-        html = str(soup)
-        new_html = html.replace('<head>', '<head>\n' + ga4_code)
-        index_path.write_text(new_html)
-
-inject_ga()
+st.markdown(ga4_code, unsafe_allow_html=True)
 
 
 # 背景画像の設定
