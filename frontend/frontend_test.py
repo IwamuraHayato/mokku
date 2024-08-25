@@ -12,7 +12,7 @@ GA_TRACKING_ID = "G-C61D8H9VCJ"  # ここにGA4のトラッキングIDを入力
 # Google Analytics 4のトラッキングコード
 ga4_code = f"""
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}"></script>
+<script src="https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){{dataLayer.push(arguments);}}
