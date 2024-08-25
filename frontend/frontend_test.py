@@ -320,7 +320,7 @@ if st.button('タッグ・パートナーを探す！'):
         with col[idx]:
             st.header(resName)
             st.image(pathImage)
-            st.write(f"(推定MBTI:{resMbti})")
+            st.write(f"(推定MBTIタイプ: 「{resMbti}」)")
             st.write(resReason)
             st.write(f"必殺技:{resSpecial}")
             # 自己紹介LP
