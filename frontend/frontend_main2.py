@@ -2,6 +2,27 @@ import streamlit as st
 import pandas as pd
 import os
 import base64
+import streamlit.components.v1 as components
+import pathlib
+import shutil
+from bs4 import BeautifulSoup
+
+GA_TRACKING_ID = "G-C61D8H9VCJ"  # ここにGA4のトラッキングIDを入力
+
+# Google Analytics 4のトラッキングコード
+ga4_code = f"""
+<!-- Google tag (gtag.js) -->
+<script src="https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+
+  gtag('config', '{GA_TRACKING_ID}');
+</script>
+"""
+st.markdown(ga4_code, unsafe_allow_html=True)
+
 
 # 背景画像の設定
 def get_base64(bin_file):
@@ -65,6 +86,7 @@ df2 = pd.read_csv('frontend/output.csv')
 df['タイプ名称'] = df['タイプ'] + ' - ' + df['名称']
 
 # タイトル
+st.image('picture/Exploder_Logo.png', width=300)
 st.title('タッグチーム・エクスプロイダー')
 st.write('')
 st.write('Tech0で新しい班を決める際、誰に声をかければよいか悩んだ経験はありませんか？')
@@ -155,7 +177,8 @@ df_for_GPT = df_plain_text[['Slack表示名','自己紹介', '業界', '関心�
                              'PJTをする上で自分が得意なこと・苦手なこと', 
                              'Tech0の参加動機と１年後に到達したい・達成したいこと',
                              '自己紹介LP']]
-
+# 行をランダムに入れ替える
+#df_for_GPT = df_for_GPT.sample(frac=1).reset_index(drop=True)
 # こっちがデプロイ環境用のコード
 # OPENAI_API_KEYを含むとPushできないため実行時は有効にしてください
 api_key = st.secrets["OPENAI_API_KEY"]
@@ -183,42 +206,55 @@ reader = df_for_GPT.to_dict(orient='records')
 people = list(reader)
 
 def find_best_matches(people, user_name, user_mbti):
-    
+
     persons = ""
     for person in people:
-        persons = persons + \
-            str(f"【名前】 {person['Slack表示名']}, \
+        persons = persons + str(f"【名前】 {person['Slack表示名']} \
                 【自己紹介】 {person['自己紹介']}, \
                 【得意な業界】 {person['業界']}, \
                 【関心のある領域】 {person['関心のある領域']}, \
                 【協働で大切にしたいこと】 {person['Tech0のPJTで8期の仲間と協働する際に大切にしたいと思うこと']}, \
                 【プロジェクト推進で得意なこと/苦手なこと】 {person['PJTをする上で自分が得意なこと・苦手なこと']}, \
-                【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']}") + "\n"
+                【参加動機や達成したいこと】 {person['Tech0の参加動機と１年後に到達したい・達成したいこと']}").replace("\n","").replace(" ","") + "\n\n"
     
-    prompt = f"名前{user_name}のMBTIタイプは{user_mbti}です。\
-            プロジェクトチームを組む際に{user_name}と合う人物を対象者から3名選び、それぞれのMBTIタイプを推測してください。\
-            また、選んだ人物とペアでプロレスをする際の必殺技の名前も提案してください。\
-            以下の条件に従ってください。\
+    prompt = f"MBTIタイプは{user_mbti}の{user_name}がチームを組む際にターゲットと相性が良いと思われる人物を、以下の手順で選んでください。\
+            手順始まり \
+                対象者全員のMBTIタイプを推定してください \
+                対象者全員の順番をランダムに変更してください \
+                推定MBTIタイプやその他の情報をもとに対象者全員の中から、{user_name}のMBTIタイプ{user_mbti}との合致度合いをスコアリングしてください \
+                全ての対象者のスコアから最もスコアが高い3名を選んでください。 \
+                選んだ3名と{user_name}とのMBTI以外の相性も、あらためて確認し選定理由を更新してください。\
+                この選定理由には対象者情報の【自己紹介】【得意な業界】【関心のある領域】【協働で大切にしたいこと】【プロジェクト推進で得意なこと/苦手なこと】 【参加動機や達成したいこと】の内容も含めてください \
+                選んだ3名それぞれの選定理由とペアでプロレスをする際の必殺技名を提案してください \
+                全ての解答の最後に、選んだ人物の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についての説明を追加してください。\
+                この説明は固定文字列\"__\"から始めてください。この説明には改行\nを含めないでください。 \
+            手順終わり \
+            以下の条件に従ってください。\n \
                 選ぶ3名に{user_name}を含めないでください\n \
-                選ぶ3名は重複させないでください\n \
-                選んだ3名はそれぞれ1回ずつ形式に従って出力してください\n \
+                選ぶ3名は、重複させないでください\n \
+                **対象者の順番に関係なく、全ての対象者をシャッフルして平等に評価し、最適な3名を選んでください。\n \
+                対象者リストの順序に影響されないよう、全対象者を独立して評価した結果、3名を選んでください。**\n \
+                できるだけ異なる特性を持った人物を選び、チーム全体のバランスを考慮してください。\n \
+                **ランダム性を持たせて選び、特定の順序に依存しないようにしてください。**\n \
                 項目には余計な記号や装飾（**など）をつけないでください\n \
-                {user_name}および選んだ人物の名前を出力する際は、漢字やカナカナなど他の表記には一切変換せず、そのままの表記で表示してください\n \
+                【名前】や【選定理由】その他の項目に、人物の名前を使う際は提供されたアルファベットの名前のみを用い、\
+                **一切の変換（漢字、カタカナ、ひらがな、アルファベットの大小文字変換など）を行わず、\
+                インプットされた文字列をそのまま使用してください**。\n \
                 指定した形式に正確に従って出力してください\n \
-                淡々と提案内容を述べるのではなく、熱血プロレスラーの熱のこもった口調でお願いします\n \
-                いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調でお願いします\n \
-                選んだ人物の推定MBTIタイプと、自分が入力したMBTIタイプとの相性についても説明を追加してください\n \
-            対象者は、次の形式に従って、出力してください。\n \
+                全ての回答は淡々と提案内容を述べるのではなく、「熱血プロレスラー」になり切り、熱のこもった口調でお願いします\n \
+                熱のこもった口調とは、いわゆる「ですます」口調の丁寧な言葉遣いではなく、「オラオラ」感があふれる感じの口調です\n \
+                プロレスラーが試合終了後のリング上でマイクパフォーマンスを行う時と同じくらいの高いテンションでお願いします\n \
+            **結果は、次の形式に忠実に従って、出力してください。この形式以外の情報は一切出力しないでください**\n \
             形式の指定はじまり\n\
-                【名前】[名前をそのまま出力]\n\
+                【名前】[名前をそのまま出力]\n \
                 【選定理由】[選定理由をそのまま出力]\n \
                 【推定MBTI】[推定MBTIタイプをアルファベット4桁のみで出力]\n \
                 【必殺技】[必殺技の名前をそのまま出力]\n \
             形式の指定終わり\n \
-            ここから対象者の情報\n" + persons
+            対象者の情報はじまり\n" + persons + "\n対象者の情報終わり"
 
     response =  openai.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[
             {"role": "user", "content": prompt },
         ],
@@ -261,20 +297,39 @@ if st.button('タッグ・パートナーを探す！'):
         resReason = match['選定理由']
         resMbti = match["推定MBTI"]
         resSpecial = match["必殺技"]
+        print("選定者：" + resName)
 
         #最終行に含まれるコメント抽出
         if(idx == 2):
-            resSpecial, resComment = resSpecial.split("\n\n")    
+            try:
+                temp = resSpecial.split("__")    
+                resSpecial = str(temp[0]).replace("\n","")
+                resComment = temp[1]
+            except:
+                resComment = "split Error:" + resSpecial
 
         # 出力イメージパス ※MBTIタイプ.jpgで保存される想定
         pathImage = f"picture/{resMbti}.jpg" # ローカル用
-
+        
+        # 自己紹介LPの取得
+        resLP = None
+        for temp in people:
+            if str(temp.get('Slack表示名')).replace(" ","") == resName:
+                resLP = temp.get('自己紹介LP')
+                print(resLP)
+                break
+                
         with col[idx]:
             st.header(resName)
             st.image(pathImage)
+            st.write(f"(推定MBTIタイプ: 「{resMbti}」)")
             st.write(resReason)
             st.write(f"必殺技:{resSpecial}")
-        
+            # 自己紹介LP
+            if resLP:
+                strWrite = f"[自己紹介LP]({resLP})"
+                st.markdown(strWrite)
+    
     # コメント出力
     st.header(resComment)
     # --- ここにSlackワークスペースを開くボタンを追加します ---
